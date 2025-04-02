@@ -1,0 +1,20 @@
+:root {
+  --bs-primary: #dc3545;
+  --bs-primary-rgb: 220, 53, 69;
+  --bs-secondary: #6c757d;
+  --bs-secondary-rgb: 108, 117, 125;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: #bb2d3b;
+  --bs-btn-hover-border-color: #b02a37;
+  --bs-btn-active-bg: #b02a37;
+  --bs-btn-active-border-color: #a52834;
+} 

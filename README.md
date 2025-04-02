@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Red Points - Ứng dụng chia sẻ điểm nguy hiểm trên đường
 
-## Getting Started
+Ứng dụng web cho phép người lái xe chuyên nghiệp chia sẻ các địa điểm cần lưu ý trên đường như: điểm dễ xảy ra tai nạn, điểm dễ vi phạm luật, tình trạng đường, chốt cảnh sát, v.v.
 
-First, run the development server:
+## Tính năng
 
+- Đăng nhập bằng tài khoản Google
+- Chia sẻ địa điểm với hình ảnh và mô tả
+- Chọn vị trí trên bản đồ
+- Phân loại địa điểm (dễ tai nạn, vi phạm luật, tình trạng đường, chốt cảnh sát)
+- Hệ thống điểm cho người dùng
+- Phê duyệt báo cáo bởi moderator
+- Chỉnh sửa báo cáo bị từ chối
+- Xem danh sách báo cáo đã gửi
+- Quản lý báo cáo cho moderator
+
+## Yêu cầu hệ thống
+
+- Node.js 18.x trở lên
+- MongoDB
+- Tài khoản Google Cloud Platform (cho OAuth)
+- Tài khoản Mapbox (cho bản đồ)
+
+## Cài đặt
+
+1. Clone repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/red-points.git
+cd red-points
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Cài đặt dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Tạo file `.env` và cập nhật các biến môi trường:
+```env
+DATABASE_URL="mongodb+srv://your-username:your-password@your-cluster.mongodb.net/red-points?retryWrites=true&w=majority"
+NEXTAUTH_SECRET="your-nextauth-secret"
+NEXTAUTH_URL="http://localhost:3000"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+NEXT_PUBLIC_MAPBOX_TOKEN="your-mapbox-token"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Chạy migrations:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-## Learn More
+5. Chạy ứng dụng:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Cấu trúc dự án
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+red-points/
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   ├── moderator/
+│   │   │   └── reports/
+│   │   ├── auth/
+│   │   ├── moderator/
+│   │   ├── profile/
+│   │   └── reports/
+│   ├── components/
+│   ├── lib/
+│   ├── types/
+│   └── utils/
+├── prisma/
+│   └── schema.prisma
+├── public/
+└── package.json
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Công nghệ sử dụng
 
-## Deploy on Vercel
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Prisma
+- MongoDB
+- NextAuth.js
+- Mapbox GL JS
+- React Map GL
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Đóng góp
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Mọi đóng góp đều được chào đón! Vui lòng tạo issue hoặc pull request.
+
+## Giấy phép
+
+MIT
