@@ -34,9 +34,11 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
       console.log('=== SignIn Callback ===')
       console.log('User:', user)
+      console.log('Account:', account)
+      console.log('Profile:', profile)
 
       if (!user.email) {
         console.log('No email provided')
