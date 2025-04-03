@@ -22,17 +22,17 @@ prisma.$connect()
     console.error('Database connection failed:', error)
   })
 
+const ALLOWED_USERS = [
+  'qtran1277@gmail.com',
+  'quang2t@gmail.com',
+  'thuythunghi@gmail.com'
+]
+
 export const authOptions: NextAuthOptions = {
-  debug: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "select_account"
-        }
-      }
     }),
   ],
   session: {
@@ -41,63 +41,46 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user }) {
+      if (!user.email || !ALLOWED_USERS.includes(user.email)) {
+        return false
+      }
+
       try {
-        if (!user.email) return false
-
-        const ALLOWED_USERS = [
-          'qtran1277@gmail.com',
-          'quang2t@gmail.com',
-          'thuythunghi@gmail.com'
-        ]
-
-        if (!ALLOWED_USERS.includes(user.email)) {
-          return false
-        }
-
-        await prisma.user.upsert({
-          where: { email: user.email },
-          update: {},
-          create: {
-            email: user.email,
-            name: user.name,
-            role: Role.DRIVER,
-            points: 0,
-            isBlocked: false
-          }
-        })
-
+        await prisma.$transaction([
+          prisma.user.upsert({
+            where: { email: user.email },
+            update: {},
+            create: {
+              email: user.email,
+              name: user.name || '',
+              role: Role.DRIVER,
+              points: 0,
+              isBlocked: false
+            }
+          })
+        ])
         return true
-      } catch (error) {
-        console.error('SignIn error:', error)
+      } catch {
         return false
       }
     },
-    async session({ session }) {
-      try {
-        if (!session.user?.email) return session
-
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          select: {
-            id: true,
-            role: true,
-            points: true,
-            isBlocked: true
+    async session({ session, token }) {
+      if (session.user?.email) {
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { id: true, role: true, points: true, isBlocked: true }
+          })
+          
+          if (user) {
+            session.user.id = user.id
+            session.user.role = user.role
+            session.user.points = user.points
+            session.user.isBlocked = user.isBlocked
           }
-        })
-
-        if (dbUser) {
-          session.user.id = dbUser.id
-          session.user.role = dbUser.role as Role
-          session.user.points = dbUser.points
-          session.user.isBlocked = dbUser.isBlocked
-        }
-
-        return session
-      } catch (error) {
-        console.error('Session error:', error)
-        return session
+        } catch {}
       }
+      return session
     }
   },
   pages: {
