@@ -22,6 +22,13 @@ prisma.$connect()
     console.error('Database connection failed:', error)
   })
 
+// List of allowed test users
+const ALLOWED_USERS = [
+  'qtran1277@gmail.com',
+  'quang2t@gmail.com',
+  'thuythunghi@gmail.com'
+]
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -42,6 +49,12 @@ export const authOptions: NextAuthOptions = {
 
       if (!user.email) {
         console.log('No email provided')
+        return false
+      }
+
+      // Check if user is in allowed list
+      if (!ALLOWED_USERS.includes(user.email)) {
+        console.log('User not in allowed list:', user.email)
         return false
       }
       
