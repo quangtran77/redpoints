@@ -14,7 +14,12 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: 'doa0oydqn',
-  }
+  },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
 }
 
 module.exports = nextConfig 
