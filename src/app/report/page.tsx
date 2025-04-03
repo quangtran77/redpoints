@@ -2,18 +2,12 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { ReportCategory } from '@prisma/client'
 import { toast } from 'react-hot-toast'
-import dynamic from 'next/dynamic'
-import { Spinner } from 'react-bootstrap'
 import Map from '@/components/Map'
-import Select, { components } from 'react-select'
-
-const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false })
+import Select from 'react-select'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
 
@@ -27,13 +21,7 @@ interface ReportType {
 export default function ReportPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const marker = useRef<mapboxgl.Marker | null>(null)
-  const [location, setLocation] = useState('')
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
