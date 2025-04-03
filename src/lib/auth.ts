@@ -23,53 +23,59 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      console.log('SignIn callback - User:', user)
-      console.log('SignIn callback - Account:', account)
+      try {
+        if (!user.email) return false
 
-      if (!user.email) {
-        console.log('No email provided')
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { id: true }
+        })
+
+        if (!dbUser) {
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              role: Role.DRIVER,
+              points: 0,
+              isBlocked: false
+            },
+            select: { id: true }
+          })
+        }
+
+        return true
+      } catch (error) {
+        console.error('SignIn error:', error)
         return false
       }
-
-      const dbUser = await prisma.user.findUnique({
-        where: { email: user.email }
-      })
-
-      console.log('Existing user:', dbUser)
-
-      if (!dbUser) {
-        console.log('Creating new user')
-        await prisma.user.create({
-          data: {
-            email: user.email,
-            name: user.name,
-            role: Role.DRIVER,
-            points: 0,
-            isBlocked: false
-          }
-        })
-      }
-
-      return true
     },
     async session({ session, token }) {
-      console.log('Session callback - Session:', session)
-      console.log('Session callback - Token:', token)
+      try {
+        if (!session.user?.email) return session
 
-      if (session.user) {
         const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email! }
+          where: { email: session.user.email },
+          select: {
+            id: true,
+            role: true,
+            points: true,
+            isBlocked: true
+          }
         })
-        console.log('DB User for session:', dbUser)
-        
+
         if (dbUser) {
           session.user.id = dbUser.id
           session.user.role = dbUser.role as Role
           session.user.points = dbUser.points
           session.user.isBlocked = dbUser.isBlocked
         }
+
+        return session
+      } catch (error) {
+        console.error('Session error:', error)
+        return session
       }
-      return session
     }
   },
   pages: {
