@@ -6,8 +6,22 @@ import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { ReportCategory } from '@prisma/client'
+import { toast } from 'react-hot-toast'
+import dynamic from 'next/dynamic'
+import { Spinner } from 'react-bootstrap'
+import Map from '@/components/Map'
+
+const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false })
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
+
+interface ReportType {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+}
 
 export default function ReportPage() {
   const { data: session, status } = useSession()
@@ -17,13 +31,68 @@ export default function ReportPage() {
   const marker = useRef<mapboxgl.Marker | null>(null)
   const [location, setLocation] = useState('')
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [reportTypes, setReportTypes] = useState<ReportType[]>([])
+  const [selectedReportType, setSelectedReportType] = useState<string>('')
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  const [isLoadingReportTypes, setIsLoadingReportTypes] = useState(true)
 
-  // Redirect to login if not authenticated
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
+    const fetchReportTypes = async () => {
+      try {
+        const response = await fetch('/api/report-types')
+        if (!response.ok) {
+          throw new Error('Failed to fetch report types')
+        }
+        const data = await response.json()
+        setReportTypes(data)
+        if (data.length > 0) {
+          setSelectedReportType(data[0].id)
+        }
+      } catch (error) {
+        console.error('Error fetching report types:', error)
+        toast.error('Không thể tải danh sách loại báo cáo')
+      } finally {
+        setIsLoadingReportTypes(false)
+      }
     }
-  }, [status, router])
+
+    fetchReportTypes()
+  }, [])
+
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      if (status === 'unauthenticated') {
+        router.push('/auth/signin')
+        return
+      }
+
+      if (!session?.user?.email) return
+
+      try {
+        const res = await fetch('/api/users/me')
+        if (!res.ok) {
+          const error = await res.text()
+          if (res.status === 403) {
+            toast.error(error)
+            router.push('/')
+            return
+          }
+          throw new Error(error)
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error)
+        toast.error('Có lỗi xảy ra khi kiểm tra trạng thái tài khoản')
+        router.push('/')
+      }
+    }
+
+    checkUserStatus()
+  }, [status, session, router])
 
   // Initialize map when modal opens
   useEffect(() => {
@@ -95,46 +164,114 @@ export default function ReportPage() {
     }
   }, [])
 
-  if (status === 'loading') {
+  const getCurrentLocation = () => {
+    setIsLoadingLocation(true)
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          setCoordinates([longitude, latitude])
+          setIsLoadingLocation(false)
+          toast.success('Đã lấy vị trí hiện tại của bạn')
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          toast.error('Không thể lấy vị trí của bạn. Vui lòng chọn vị trí trên bản đồ.')
+          setIsLoadingLocation(false)
+        }
+      )
+    } else {
+      toast.error('Trình duyệt của bạn không hỗ trợ định vị')
+      setIsLoadingLocation(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!coordinates) {
+      toast.error('Vui lòng chọn vị trí trên bản đồ')
+      return
+    }
+
+    if (!selectedReportType) {
+      toast.error('Vui lòng chọn loại báo cáo')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const [longitude, latitude] = coordinates
+
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          reportTypeId: selectedReportType,
+          latitude,
+          longitude
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.text()
+        if (res.status === 403) {
+          toast.error(error)
+          router.push('/')
+          return
+        }
+        throw new Error(error)
+      }
+
+      await res.json()
+      toast.success('Đã gửi báo cáo thành công')
+      router.push('/')
+    } catch (error) {
+      console.error('Error creating report:', error)
+      toast.error('Có lỗi xảy ra khi gửi báo cáo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (status === 'loading' || isLoadingReportTypes) {
     return (
-      <div className="container">
-        <div className="d-flex justify-content-center my-5">
-          <div className="spinner-border text-danger" role="status">
-            <span className="visually-hidden">Đang tải...</span>
-          </div>
-        </div>
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
       </div>
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here
-    console.log({
-      location,
-      coordinates
-    })
+  if (!session) {
+    return null
   }
 
   return (
-    <div className="container py-5">
-      <div className="row justify-content-center">
-        <div className="col-12 col-md-8 col-lg-6">
+    <div className="container py-4">
+      <div className="row">
+        <div className="col-12">
           <div className="card shadow-sm">
-            <div className="card-body p-4">
-              <h1 className="h3 text-center mb-4">Báo cáo điểm nguy hiểm</h1>
-              
-              <form className="needs-validation" noValidate onSubmit={handleSubmit}>
+            <div className="card-body">
+              <h1 className="h4 mb-4">Tạo báo cáo mới</h1>
+              <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="title" className="form-label">Tiêu đề</label>
                   <input
                     type="text"
                     className="form-control"
                     id="title"
-                    name="title"
-                    placeholder="VD: Ổ gà lớn trên đường..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="VD: Ổ gà lớn trên đường Nguyễn Trãi"
                     required
                   />
+                  <div className="form-text">Mô tả ngắn gọn về vấn đề bạn muốn báo cáo</div>
                 </div>
 
                 <div className="mb-3">
@@ -142,83 +279,93 @@ export default function ReportPage() {
                   <textarea
                     className="form-control"
                     id="description"
-                    name="description"
-                    rows={4}
-                    placeholder="Mô tả chi tiết về điểm nguy hiểm..."
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="VD: Ổ gà rộng khoảng 1m, sâu 20cm, gây nguy hiểm cho người tham gia giao thông, đặc biệt vào ban đêm..."
                     required
-                  ></textarea>
+                  />
+                  <div className="form-text">Mô tả chi tiết về vị trí, mức độ nghiêm trọng và các thông tin khác</div>
                 </div>
 
                 <div className="mb-3">
-                  <label htmlFor="location" className="form-label">Vị trí</label>
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="location"
-                      value={location}
-                      placeholder="Chọn vị trí trên bản đồ..."
-                      required
-                      readOnly
-                    />
+                  <label htmlFor="reportType" className="form-label">Loại cảnh báo</label>
+                  <select
+                    className="form-select"
+                    id="reportType"
+                    value={selectedReportType}
+                    onChange={(e) => setSelectedReportType(e.target.value)}
+                    required
+                  >
+                    <option value="">Chọn loại cảnh báo</option>
+                    {reportTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.icon && `${type.icon} `}{type.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedReportType && (
+                    <div className="form-text">
+                      {reportTypes.find(t => t.id === selectedReportType)?.description}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label d-flex justify-content-between align-items-center">
+                    <span>Vị trí</span>
                     <button 
                       type="button" 
-                      className="btn btn-outline-secondary"
-                      data-bs-toggle="modal"
-                      data-bs-target="#mapModal"
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={getCurrentLocation}
+                      disabled={isLoadingLocation}
                     >
-                      Chọn vị trí
+                      {isLoadingLocation ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Đang lấy vị trí...
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-geo-alt me-2"></i>
+                          Lấy vị trí hiện tại
+                        </>
+                      )}
                     </button>
+                  </label>
+                  <div className="border rounded" style={{ height: '400px' }}>
+                    <Map onSelectLocation={setCoordinates} initialCoordinates={coordinates} />
                   </div>
+                  {coordinates && (
+                    <div className="form-text">
+                      Đã chọn vị trí: {coordinates[1].toFixed(6)}, {coordinates[0].toFixed(6)}
+                    </div>
+                  )}
+                  <div className="form-text">Chọn vị trí trên bản đồ hoặc sử dụng vị trí hiện tại của bạn</div>
                 </div>
 
-                <div className="mb-3">
-                  <label htmlFor="type" className="form-label">Loại cảnh báo</label>
-                  <select className="form-select" id="type" name="type" required>
-                    <option value="">Chọn loại cảnh báo...</option>
-                    <option value="road_damage">Hư hỏng đường</option>
-                    <option value="construction">Công trình đang thi công</option>
-                    <option value="traffic">Điểm hay ùn tắc</option>
-                    <option value="accident">Điểm hay tai nạn</option>
-                    <option value="other">Khác</option>
-                  </select>
-                </div>
-
-                <div className="d-grid gap-2">
-                  <button type="submit" className="btn btn-danger">
-                    Gửi báo cáo
-                  </button>
-                  <Link href="/" className="btn btn-light">
-                    Quay lại
-                  </Link>
-                </div>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    'Gửi báo cáo'
+                  )}
+                </button>
               </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Map Modal */}
-      <div className="modal fade" id="mapModal" tabIndex={-1}>
-        <div className="modal-dialog modal-lg modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Chọn vị trí trên bản đồ</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div className="modal-body p-0">
-              <div ref={mapContainer} style={{ width: '100%', height: '500px' }}></div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-              <button 
-                type="button" 
-                className="btn btn-primary" 
-                data-bs-dismiss="modal"
-                disabled={!coordinates}
-              >
-                Xác nhận vị trí
-              </button>
             </div>
           </div>
         </div>

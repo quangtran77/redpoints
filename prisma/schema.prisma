@@ -20,6 +20,7 @@ model Account {
   scope             String?
   id_token          String? @db.String
   session_state     String?
+  createdAt         DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -31,21 +32,26 @@ model Session {
   sessionToken String   @unique
   userId       String   @db.ObjectId
   expires      DateTime
+  createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(DRIVER)
-  points        Int       @default(0)
-  accounts      Account[]
-  sessions      Session[]
-  reports       Report[]
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  role           Role      @default(DRIVER)
+  points         Int       @default(0)
+  hashedPassword String?
+  isBlocked      Boolean   @default(false)
+  accounts       Account[]
+  sessions       Session[]
+  reports        Report[]  @relation("UserReports")
   moderatedReports Report[] @relation("ModeratedReports")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model VerificationToken {
@@ -57,28 +63,65 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model PointRewardVersion {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount    Int
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  reports   Report[]
+}
+
+model ReportType {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  description String?
+  icon        String?   // Emoji or icon class
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  reports     Report[]
+}
+
 model Report {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  description String
-  latitude    Float
-  longitude   Float
-  images      String[]
-  status      ReportStatus @default(PENDING)
-  category    ReportCategory
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  userId      String   @db.ObjectId
-  moderatorId String?  @db.ObjectId
-  rejectionReason String?
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  moderator   User?    @relation("ModeratedReports", fields: [moderatorId], references: [id])
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  title              String
+  description        String
+  latitude           Float
+  longitude          Float
+  address            String?
+  city               String?
+  district           String?
+  images             String[]
+  status             ReportStatus       @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  userId             String             @db.ObjectId
+  user               User               @relation("UserReports", fields: [userId], references: [id])
+  moderatorId        String?            @db.ObjectId
+  moderator          User?              @relation("ModeratedReports", fields: [moderatorId], references: [id])
+  rejectionReason    String?
+  pointRewardVersionId String?          @db.ObjectId
+  pointRewardVersion PointRewardVersion? @relation(fields: [pointRewardVersionId], references: [id])
+  reportTypeId       String             @db.ObjectId
+  reportType         ReportType         @relation(fields: [reportTypeId], references: [id])
+
+  @@index([userId])
+  @@index([moderatorId])
+  @@index([reportTypeId])
+}
+
+model SystemConfig {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
-  DRIVER
-  MODERATOR
   ADMIN
+  MODERATOR
+  DRIVER
 }
 
 enum ReportStatus {
@@ -88,9 +131,7 @@ enum ReportStatus {
 }
 
 enum ReportCategory {
-  ACCIDENT_PRONE
-  TRAFFIC_VIOLATION
   ROAD_CONDITION
-  POLICE_CHECKPOINT
-  OTHER
+  TRAFFIC_VIOLATION
+  ACCIDENT_PRONE
 } 

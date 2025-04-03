@@ -18,6 +18,9 @@ export interface Report {
   description: string
   latitude: number
   longitude: number
+  address?: string | null
+  city?: string | null
+  district?: string | null
   images: string[]
   status: ReportStatus
   category: ReportCategory
