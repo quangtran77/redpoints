@@ -30,10 +30,16 @@ const ALLOWED_USERS = [
 ]
 
 export const authOptions: NextAuthOptions = {
+  debug: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "select_account"
+        }
+      }
     }),
   ],
   session: {
@@ -116,6 +122,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error'
   },
   secret: process.env.NEXTAUTH_SECRET,
 } 
