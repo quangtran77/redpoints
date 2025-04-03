@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast'
 import dynamic from 'next/dynamic'
 import { Spinner } from 'react-bootstrap'
 import Map from '@/components/Map'
+import Select, { components } from 'react-select'
 
 const MapComponent = dynamic(() => import('@/components/Map'), { ssr: false })
 
@@ -44,13 +45,16 @@ export default function ReportPage() {
   useEffect(() => {
     const fetchReportTypes = async () => {
       try {
+        console.log('Fetching report types...')
         const response = await fetch('/api/report-types')
         if (!response.ok) {
           throw new Error('Failed to fetch report types')
         }
         const data = await response.json()
+        console.log('API Response:', data)
         setReportTypes(data)
         if (data.length > 0) {
+          console.log('Setting initial report type:', data[0])
           setSelectedReportType(data[0].id)
         }
       } catch (error) {
@@ -238,6 +242,48 @@ export default function ReportPage() {
     }
   }
 
+  const reportTypeOptions = reportTypes.map(type => {
+    console.log('Creating option for report type:', type)
+    return {
+      value: type.id,
+      label: type.name,
+      icon: type.icon,
+      description: type.description
+    }
+  })
+
+  const getIconClasses = (iconString: string | null) => {
+    if (!iconString) return '';
+    const [iconName, color] = iconString.split(':');
+    return `bi ${iconName} ${color ? `text-${color}` : ''}`;
+  }
+
+  const Option = (props: any) => {
+    return (
+      <components.Option {...props}>
+        <div className="d-flex align-items-center">
+          <div style={{ width: '32px', textAlign: 'center' }}>
+            <i className={`${getIconClasses(props.data.icon)} fs-5`}></i>
+          </div>
+          <span>{props.data.label}</span>
+        </div>
+      </components.Option>
+    )
+  }
+
+  const SingleValue = (props: any) => {
+    return (
+      <components.SingleValue {...props}>
+        <div className="d-flex align-items-center">
+          <div style={{ width: '32px', textAlign: 'center' }}>
+            <i className={`${getIconClasses(props.data.icon)} fs-5`}></i>
+          </div>
+          <span>{props.data.label}</span>
+        </div>
+      </components.SingleValue>
+    )
+  }
+
   if (status === 'loading' || isLoadingReportTypes) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
@@ -290,20 +336,16 @@ export default function ReportPage() {
 
                 <div className="mb-3">
                   <label htmlFor="reportType" className="form-label">Loại cảnh báo</label>
-                  <select
-                    className="form-select"
+                  <Select
                     id="reportType"
-                    value={selectedReportType}
-                    onChange={(e) => setSelectedReportType(e.target.value)}
+                    value={reportTypeOptions.find(option => option.value === selectedReportType)}
+                    onChange={(option) => setSelectedReportType(option?.value || '')}
+                    options={reportTypeOptions}
+                    placeholder="Chọn loại cảnh báo"
+                    isSearchable={false}
+                    components={{ Option, SingleValue }}
                     required
-                  >
-                    <option value="">Chọn loại cảnh báo</option>
-                    {reportTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.icon && `${type.icon} `}{type.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {selectedReportType && (
                     <div className="form-text">
                       {reportTypes.find(t => t.id === selectedReportType)?.description}
