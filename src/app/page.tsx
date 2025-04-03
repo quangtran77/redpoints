@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import Spinner from '@/components/Spinner'
 import ReportList from '@/components/ReportList'
-import { Report } from '@prisma/client'
+import { Report } from '@/types'
 
 export default function HomePage() {
   const { data: session, status } = useSession()
