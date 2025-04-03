@@ -23,13 +23,22 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      if (!user.email) return false
+      console.log('SignIn callback - User:', user)
+      console.log('SignIn callback - Account:', account)
+
+      if (!user.email) {
+        console.log('No email provided')
+        return false
+      }
 
       const dbUser = await prisma.user.findUnique({
         where: { email: user.email }
       })
 
+      console.log('Existing user:', dbUser)
+
       if (!dbUser) {
+        console.log('Creating new user')
         await prisma.user.create({
           data: {
             email: user.email,
@@ -44,10 +53,15 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async session({ session, token }) {
+      console.log('Session callback - Session:', session)
+      console.log('Session callback - Token:', token)
+
       if (session.user) {
         const dbUser = await prisma.user.findUnique({
           where: { email: session.user.email! }
         })
+        console.log('DB User for session:', dbUser)
+        
         if (dbUser) {
           session.user.id = dbUser.id
           session.user.role = dbUser.role as Role
