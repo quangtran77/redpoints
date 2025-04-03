@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
-import { authOptions } from '@/lib/auth'
+import { authOptions } from '@/app/api/auth/auth-options'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -26,7 +26,7 @@ export async function PATCH(
 
     const report = await prisma.report.update({
       where: {
-        id: params.id
+        id: context.params.id
       },
       data: {
         status,
