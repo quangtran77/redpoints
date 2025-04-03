@@ -2,7 +2,6 @@ import { NextAuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import prisma from '@/lib/prisma'
 import { Role } from '@prisma/client'
-import { PrismaAdapter } from '@auth/prisma-adapter'
 
 console.log('Environment variables:')
 console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET)
@@ -12,7 +11,6 @@ console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID)
 console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET)
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
