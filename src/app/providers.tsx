@@ -8,7 +8,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <CldUploadWidget
         uploadPreset="red-points"
-        cloudName="doa0oydqn"
+        config={{
+          cloud: {
+            cloudName: 'doa0oydqn'
+          }
+        }}
         options={{
           maxFiles: 4,
           maxFileSize: 5000000,
@@ -17,7 +21,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
           resourceType: 'image'
         }}
       >
-        {children}
+        {({ cloudinary, widget, open, results, error }) => (
+          <>
+            {children}
+            {/* Bạn có thể sử dụng các props này để hiển thị widget hoặc xử lý kết quả */}
+          </>
+        )}
       </CldUploadWidget>
     </SessionProvider>
   )
