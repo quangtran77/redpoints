@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { Role } from '@prisma/client'
+import type { Role } from '@prisma/client'
 import AdminUsers from '@/components/AdminUsers'
 import { Spinner } from 'react-bootstrap'
 
@@ -12,7 +12,7 @@ export default function AdminPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== Role.ADMIN)) {
+    if (status === 'unauthenticated' || (status === 'authenticated' && session?.user?.role !== 'ADMIN')) {
       router.push('/')
     }
   }, [status, session, router])
@@ -27,7 +27,7 @@ export default function AdminPage() {
     )
   }
 
-  if (!session?.user || session.user.role !== Role.ADMIN) {
+  if (!session?.user || session.user.role !== 'ADMIN') {
     return null
   }
 
