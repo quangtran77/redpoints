@@ -3,9 +3,15 @@ import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { authOptions } from '@/app/api/auth/auth-options'
 
+type Props = {
+  params: {
+    id: string
+  }
+}
+
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  props: Props
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -26,7 +32,7 @@ export async function PATCH(
 
     const report = await prisma.report.update({
       where: {
-        id: params.id
+        id: props.params.id
       },
       data: {
         status,
