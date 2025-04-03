@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import type { Role } from '@prisma/client'
 import AdminUsers from '@/components/AdminUsers'
 import { Spinner } from 'react-bootstrap'
 
