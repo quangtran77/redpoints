@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
@@ -43,12 +43,17 @@ export const authOptions: NextAuthOptions = {
 
       return true
     },
-    async session({ session, user }) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id
-        session.user.role = user.role as Role
-        session.user.points = user.points
-        session.user.isBlocked = user.isBlocked
+        const dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email! }
+        })
+        if (dbUser) {
+          session.user.id = dbUser.id
+          session.user.role = dbUser.role as Role
+          session.user.points = dbUser.points
+          session.user.isBlocked = dbUser.isBlocked
+        }
       }
       return session
     }
