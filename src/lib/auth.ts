@@ -22,13 +22,6 @@ prisma.$connect()
     console.error('Database connection failed:', error)
   })
 
-// List of allowed test users
-const ALLOWED_USERS = [
-  'qtran1277@gmail.com',
-  'quang2t@gmail.com',
-  'thuythunghi@gmail.com'
-]
-
 export const authOptions: NextAuthOptions = {
   debug: true,
   providers: [
@@ -47,26 +40,21 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log('=== SignIn Callback ===')
-      console.log('User:', user)
-      console.log('Account:', account)
-      console.log('Profile:', profile)
-
-      if (!user.email) {
-        console.log('No email provided')
-        return false
-      }
-
-      // Check if user is in allowed list
-      if (!ALLOWED_USERS.includes(user.email)) {
-        console.log('User not in allowed list:', user.email)
-        return false
-      }
-      
+    async signIn({ user }) {
       try {
-        console.log('Attempting to upsert user:', user.email)
-        const result = await prisma.user.upsert({
+        if (!user.email) return false
+
+        const ALLOWED_USERS = [
+          'qtran1277@gmail.com',
+          'quang2t@gmail.com',
+          'thuythunghi@gmail.com'
+        ]
+
+        if (!ALLOWED_USERS.includes(user.email)) {
+          return false
+        }
+
+        await prisma.user.upsert({
           where: { email: user.email },
           update: {},
           create: {
@@ -77,7 +65,7 @@ export const authOptions: NextAuthOptions = {
             isBlocked: false
           }
         })
-        console.log('Upsert result:', result)
+
         return true
       } catch (error) {
         console.error('SignIn error:', error)
@@ -85,16 +73,9 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async session({ session }) {
-      console.log('=== Session Callback ===')
-      console.log('Session:', session)
-
-      if (!session.user?.email) {
-        console.log('No user email in session')
-        return session
-      }
-
       try {
-        console.log('Fetching user from database:', session.user.email)
+        if (!session.user?.email) return session
+
         const dbUser = await prisma.user.findUnique({
           where: { email: session.user.email },
           select: {
@@ -104,7 +85,6 @@ export const authOptions: NextAuthOptions = {
             isBlocked: true
           }
         })
-        console.log('Database user:', dbUser)
 
         if (dbUser) {
           session.user.id = dbUser.id
