@@ -5,12 +5,15 @@ import { authOptions } from '@/app/api/auth/auth-options'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     const user = await prisma.user.findUnique({
@@ -18,7 +21,10 @@ export async function PATCH(
     })
 
     if (!user || user.role !== 'MODERATOR') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     const data = await request.json()
@@ -26,7 +32,7 @@ export async function PATCH(
 
     const report = await prisma.report.update({
       where: {
-        id: params.id
+        id: context.params.id
       },
       data: {
         status,
@@ -44,9 +50,15 @@ export async function PATCH(
       }
     })
 
-    return NextResponse.json(report)
+    return new Response(JSON.stringify(report), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    })
   } catch (error) {
     console.error('Error in PATCH /api/moderator/[id]:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 } 
