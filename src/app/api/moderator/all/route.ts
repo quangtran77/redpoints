@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 import { ReportStatus } from '@prisma/client'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user || session.user.role !== 'MODERATOR') {
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching reports:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Có lỗi xảy ra khi tải danh sách báo cáo' },
       { status: 500 }
     )
   }
