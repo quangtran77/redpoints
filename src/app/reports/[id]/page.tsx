@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Report, ReportCategory } from '@prisma/client'
+import { Report } from '@prisma/client'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
@@ -15,22 +15,10 @@ type ReportWithUser = Report & {
     name: string | null
     image: string | null
   }
-}
-
-const categoryLabels: Record<ReportCategory, string> = {
-  ROAD_CONDITION: 'Hư hỏng đường',
-  TRAFFIC_VIOLATION: 'Vi phạm giao thông',
-  ACCIDENT_PRONE: 'Điểm hay tai nạn',
-  POLICE_CHECKPOINT: 'Chốt CSGT',
-  OTHER: 'Khác'
-}
-
-const categoryIcons: Record<ReportCategory, string> = {
-  ROAD_CONDITION: '🚧',
-  TRAFFIC_VIOLATION: '🚫',
-  ACCIDENT_PRONE: '⚠️',
-  POLICE_CHECKPOINT: '👮',
-  OTHER: '📌'
+  reportType: {
+    name: string
+    icon: string | null
+  }
 }
 
 export default function ReportDetail() {
@@ -135,8 +123,14 @@ export default function ReportDetail() {
             )}
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
-                <span className="fs-4 me-2">{categoryIcons[report.category]}</span>
-                <span className="badge bg-danger">{categoryLabels[report.category]}</span>
+                <span className="fs-4 me-2">
+                  {report.reportType.icon ? (
+                    <i className={`bi ${report.reportType.icon}`}></i>
+                  ) : (
+                    '📌'
+                  )}
+                </span>
+                <span className="badge bg-danger">{report.reportType.name}</span>
                 <small className="text-muted ms-auto">
                   {new Date(report.createdAt).toLocaleDateString('vi-VN')}
                 </small>
