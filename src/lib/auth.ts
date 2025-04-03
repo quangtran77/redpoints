@@ -46,40 +46,39 @@ export const authOptions: NextAuthOptions = {
       }
 
       try {
-        await prisma.$transaction([
-          prisma.user.upsert({
-            where: { email: user.email },
-            update: {},
-            create: {
-              email: user.email,
-              name: user.name || '',
-              role: Role.DRIVER,
-              points: 0,
-              isBlocked: false
-            }
-          })
-        ])
-        return true
+        const result = await prisma.user.upsert({
+          where: { email: user.email },
+          update: {},
+          create: {
+            email: user.email,
+            name: user.name || '',
+            role: Role.DRIVER,
+            points: 0,
+            isBlocked: false
+          }
+        })
+        return !!result
       } catch {
         return false
       }
     },
     async session({ session, token }) {
-      if (session.user?.email) {
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
-            select: { id: true, role: true, points: true, isBlocked: true }
-          })
-          
-          if (user) {
-            session.user.id = user.id
-            session.user.role = user.role
-            session.user.points = user.points
-            session.user.isBlocked = user.isBlocked
-          }
-        } catch {}
-      }
+      if (!session.user?.email) return session
+
+      try {
+        const user = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { id: true, role: true, points: true, isBlocked: true }
+        })
+        
+        if (user) {
+          session.user.id = user.id
+          session.user.role = user.role
+          session.user.points = user.points
+          session.user.isBlocked = user.isBlocked
+        }
+      } catch {}
+
       return session
     }
   },
