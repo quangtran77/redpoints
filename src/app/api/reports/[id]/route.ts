@@ -1,15 +1,19 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: any) {
   try {
+    const { id } = context.params
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Thiếu ID báo cáo' },
+        { status: 400 }
+      )
+    }
+
     const report = await prisma.report.findUnique({
-      where: {
-        id: params.id
-      },
+      where: { id },
       include: {
         user: {
           select: {
@@ -27,7 +31,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(report)
+    return NextResponse.json(report, { status: 200 })
   } catch (error) {
     console.error('Error fetching report:', error)
     return NextResponse.json(
@@ -35,4 +39,4 @@ export async function GET(
       { status: 500 }
     )
   }
-} 
+}

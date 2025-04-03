@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, context: any) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: session.user.email }
     })
 
     if (!user || user.role !== 'MODERATOR') {
@@ -22,32 +22,27 @@ export async function PATCH(request: NextRequest, context: any) {
     const data = await request.json()
     const { status, rejectionReason } = data
 
-    const id = context.params.id
-
     const updatedReport = await prisma.report.update({
-      where: { id },
+      where: { id: context.params.id },
       data: {
         status,
         rejectionReason,
-        moderatorId: user.id,
+        moderatorId: user.id
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true,
-          },
+            email: true
+          }
         },
-        reportType: true,
-      },
+        reportType: true
+      }
     })
 
-    return NextResponse.json(updatedReport, { status: 200 })
+    return NextResponse.json(updatedReport)
   } catch (error) {
     console.error('Error in PATCH /api/moderator/[id]:', error)
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
