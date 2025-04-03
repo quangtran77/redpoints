@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import AdminUsers from '@/components/AdminUsers'
 import { Spinner } from 'react-bootstrap'
-import { SessionProvider } from 'next-auth/react'
 
-function AdminContent() {
+export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
@@ -36,13 +35,5 @@ function AdminContent() {
       <h1 className="h4 mb-4">Admin Dashboard</h1>
       <AdminUsers />
     </div>
-  )
-}
-
-export default function AdminPage() {
-  return (
-    <SessionProvider>
-      <AdminContent />
-    </SessionProvider>
   )
 } 

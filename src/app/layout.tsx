@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Toaster } from 'react-hot-toast'
 import NavBar from '@/components/NavBar'
+import Providers from '@/components/Providers'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './globals.css'
@@ -21,15 +22,19 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const session = await getServerSession(authOptions)
+
   return (
     <html lang="vi">
       <head>
         <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" />
       </head>
       <body className={inter.className}>
-        <NavBar />
-        <Toaster position="top-right" />
-        {children}
+        <Providers session={session}>
+          <NavBar />
+          <Toaster position="top-right" />
+          {children}
+        </Providers>
       </body>
     </html>
   )
