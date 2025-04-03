@@ -6,6 +6,8 @@ import { useEffect, useState, useRef } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { toast } from 'react-hot-toast'
+import { Spinner } from 'react-bootstrap'
+import { components } from 'react-select'
 import Map from '@/components/Map'
 import Select from 'react-select'
 
@@ -22,6 +24,7 @@ export default function ReportPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [coordinates, setCoordinates] = useState<[number, number] | null>(null)
+  const [location, setLocation] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -29,6 +32,10 @@ export default function ReportPage() {
   const [selectedReportType, setSelectedReportType] = useState<string>('')
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   const [isLoadingReportTypes, setIsLoadingReportTypes] = useState(true)
+
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const map = useRef<mapboxgl.Map | null>(null)
+  const marker = useRef<mapboxgl.Marker | null>(null)
 
   useEffect(() => {
     const fetchReportTypes = async () => {
@@ -363,12 +370,10 @@ export default function ReportPage() {
                       )}
                     </button>
                   </label>
-                  <div className="border rounded" style={{ height: '400px' }}>
-                    <Map onSelectLocation={setCoordinates} initialCoordinates={coordinates} />
-                  </div>
-                  {coordinates && (
+                  <div ref={mapContainer} className="border rounded" style={{ height: '400px' }} />
+                  {location && (
                     <div className="form-text">
-                      Đã chọn vị trí: {coordinates[1].toFixed(6)}, {coordinates[0].toFixed(6)}
+                      Đã chọn vị trí: {location}
                     </div>
                   )}
                   <div className="form-text">Chọn vị trí trên bản đồ hoặc sử dụng vị trí hiện tại của bạn</div>
