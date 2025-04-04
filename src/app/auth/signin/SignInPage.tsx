@@ -2,10 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { getProviders, ClientSafeProvider } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import SignInComponent from './SignInComponent'
+
+const errorMessages: Record<string, string> = {
+  AccessDenied: 'Bạn không có quyền truy cập. Chỉ những email được phép mới có thể đăng nhập.',
+  Default: 'Đã xảy ra lỗi trong quá trình xác thực. Vui lòng thử lại sau.'
+}
 
 export default function SignInPage() {
   const [providers, setProviders] = useState<Record<string, ClientSafeProvider> | null>(null)
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
 
   useEffect(() => {
     const loadProviders = async () => {
@@ -42,6 +50,12 @@ export default function SignInPage() {
                     Đăng nhập để tiếp tục với Red Points
                   </p>
                 </div>
+
+                {error && (
+                  <div className="alert alert-danger mb-4" role="alert">
+                    {errorMessages[error] || errorMessages.Default}
+                  </div>
+                )}
 
                 <div className="d-grid gap-3">
                   {providers &&
